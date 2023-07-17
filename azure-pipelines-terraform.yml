@@ -1,0 +1,42 @@
+trigger:
+  branches:
+    include:
+      - master      
+    
+
+stages:
+  - stage: 'Build'
+    jobs:
+    - job: 'build'
+      pool: 'Private VSTS'
+      steps:
+        - task: CopyFiles@2
+          displayName: 'Copy Artifact to Staging Directory'
+          inputs:
+            SourceFolder: 'parentfolder/subfolder'
+            Contents: '**'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish Artifact: Terraform-Templates'
+          inputs:
+            PathtoPublish: '$(build.artifactstagingdirectory)'
+            ArtifactName: 'Terraform-Templates'
+            publishLocation: 'Container'
+
+  - stage: DV
+    pool: 'Private VSTS'    
+    jobs:
+    - template: deployment-job-terraform.yml
+      parameters:
+        environment: dv   
+        serviceconnection: serviceconnectionname
+
+  - stage: QA
+    pool: 'Private VSTS'    
+    jobs:
+    - template: deployment-job-apim.yml
+      parameters:
+        environment: qa   
+        serviceconnection: servivceconnectionname
+
