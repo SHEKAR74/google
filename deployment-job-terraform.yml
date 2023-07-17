@@ -1,0 +1,49 @@
+parameters: 
+    - name: environment
+      type: string
+    - name: serviceconnection
+      type: string
+
+jobs:
+  - job: deploy_terraform_templates
+    displayName: 'Deploy terraform'
+    variables:
+    - template: 'Variables/${{ parameters.environment }}.yml'
+    - template: 'Variables/global.yml'    
+
+    steps:     
+    - checkout: none
+    - download: current
+      artifact: Terraform-Templates
+      
+    - powershell: |
+        $expiryStamp = [datetime]::UtcNow.AddMonths(1).ToString('yyyy-MM-ddTHH:mm:ssZ')
+        Write-Host "##vso[task.setvariable variable=templates.sasExpiryStamp]$expiryStamp"  
+
+    - task: replacetokens@3
+      displayName: 'Replace tokens in template'
+      inputs:
+        rootDirectory: '$(Pipeline.Workspace)/Terraform-Templates/Templates'
+        targetFiles: '**/*.json'
+        tokenPrefix: '__'
+        tokenSuffix: '__'  
+
+    - task: AzureResourceGroupDeployment@2
+      displayName: 'Azure Deployment: Deploy APIM Template (Key Vault Secrets from Parameterized params.json)'
+      inputs:
+        azureSubscription: '${{parameters.serviceconnection}}'
+        resourceGroupName: '$(apim.resourcegroup)'
+        location: '$(apim.location)'
+        csmFile: '$(Pipeline.Workspace)/APIM-ARM-Templates/Templates/Template.APIM.json'
+        csmParametersFile: '$(Pipeline.Workspace)/APIM-ARM-Templates/Templates/Tokenized.APIM.parameters.json'
+        overrideParameters: '-apimsku $(apim.apimsku) -apimskucount $(apim.apimskucount) -publisherEmail $(apim.publisherEmail) -publisherName "$(apim.publisherName)" -proxyCustomHostname $(apim.proxyCustomHostName) -portalCustomHostname $(apim.portalCustomHostName) -apiManagementServiceName $(apim.Name) -apimVnetName $(apim.vNetName) -apimVnetResourceGroup $(apim.vNetResourceGroup) -apimSubnetName $(apim.subnetName) -apimSslCertificateBase64Encoded "$(apim.proxyCertificateBase64)" -apimSslCertificatePassword "$(apim.proxyCertificatePassword)" -apimAppId $(apim.appId) -apimClientSecret $(apim.clientSecret) -tenantName $(TenantHostname) -tokenExpiryDateTime $(templates.sasExpiryStamp) -templateStorageAccountName $(codeartifact.blob.name) -artifactsLocation $(codeartifact.blob.uri) -keyVaultBuildingBlockTemplate $(codeartifact.blob.v2.keyvault) -templateStorageAccountRG $(codeartifact.blob.resourcegroup) -artifactsSubscriptionId $(codeartifact.subscriptionid) -keyVaultName $(apim.keyVaultName) -subnet07name $(subnet07Name) -subnet08name $(subnet08Name) -subnet09name $(subnet09Name) -WAFbackendPublicKeyData $(apim.proxyCertificatePublicKeyData) -tenantId $(tenantId) -principalId $(principalId)' 
+
+    - task: AzurePowerShell@4
+      displayName: 'Azure PowerShell script: Upload Tenant-Level Policy XML'
+      inputs:
+        azureSubscription: '${{parameters.serviceconnection}}'
+        ScriptType: InlineScript
+        Inline: |
+         $apimContext = New-AzApiManagementContext -ResourceGroupName $(apim.resourcegroup) -ServiceName $(apim.Name) 
+         Set-AzApiManagementPolicy -Context $apimContext -PolicyFilePath '$(Pipeline.Workspace)/APIM-ARM-Templates/Scripts/Apim_Tenant_Level_Policy.xml'
+        azurePowerShellVersion: LatestVersion
