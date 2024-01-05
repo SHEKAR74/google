@@ -59,3 +59,51 @@ variable "port_protocol" {
   default     = "TCP"
   description = "A protocol for the container"
 }
+
+
+
+// Sets up diagnostics for App Service
+//**********************************************************************************************
+resource "azurerm_monitor_diagnostic_setting" "cl_app_service_plan_diagnostic_setting" {
+  name                       = "${var.env}-${var.postfix}-asp-diag"
+  target_resource_id         = azurerm_app_service.cl_app_service.id
+  log_analytics_workspace_id = var.cl_app_service_log_analytics_workspace_id
+
+  dynamic "log" {
+    for_each = var.cl_app_service_diagnostics.logs
+    content {
+      category = log.value
+
+      retention_policy {
+        enabled = false
+        days    = 0
+      }
+    }
+  }
+
+  dynamic "metric" {
+    for_each = var.cl_app_service_diagnostics.metrics
+    content {
+      category = metric.value
+
+      retention_policy {
+        enabled = false
+        days    = 0
+      }
+    }
+  }
+}
+//**********************************************************************************************
+
+
+variable "cl_app_service_log_analytics_workspace_id" {
+    description = "(Required) The the log analytics workspace ID for diagnostics."
+}
+variable "cl_app_service_diagnostics" {
+    description = "(Optional) Diagnostic settings for those resources that support it."
+    type        = object({ logs = list(string), metrics = list(string) })
+    default = {
+        logs    = ["AppServiceAntivirusScanAuditLogs", "AppServiceHTTPLogs", "AppServiceConsoleLogs", "AppServiceAppLogs", "AppServiceFileAuditLogs", "AppServiceAuditLogs", "AppServiceIPSecAuditLogs", "AppServicePlatformLogs"]
+        metrics = ["AllMetrics"]
+    }
+}
