@@ -1,1 +1,5 @@
 https://github.com/Azure/azure-data-labs-modules
+
+terraform plan -target="azurerm_container_group.container_group_1" -target="azurerm_container_group.container_group_2" -target="azurerm_container_group.container_group_3" -var-file="./environments/template_guardian.tfvars"
+
+terraform apply-target="azurerm_container_group.container_group_1" -target="azurerm_container_group.container_group_2" -target="azurerm_container_group.container_group_3" -var-file="./environments/template_guardian.tfvars"
