@@ -1,0 +1,21 @@
+container_frontend_settings = {
+  container_name   = "aci-sppi-webfrontend-dev-we-001"
+  image_name       = "aimdemoregistryallianz.azurecr.io/sppi.web.frontend:v1"
+  cpu_resources    = "0.5"
+  memory_resources = "1.5"
+  port_number      = "5000"
+}
+container_promptflow_settings = {
+  container_name   = "aci-sppi-promptflow-dev-we-001"
+  image_name       = "aimdemoregistryallianz.azurecr.io/sppi.promptflow:v1"
+  cpu_resources    = "0.5"
+  memory_resources = "1.5"
+  port_number      = "8080"
+}
+container_datamanager_settings = {
+  container_name   = "aci-sppi-datamanager-dev-we-001"
+  image_name       = "aimdemoregistryallianz.azurecr.io/sppi.datamanage:v1"
+  cpu_resources    = 0.5
+  memory_resources = 1.5
+  port_number      = 6050
+}
