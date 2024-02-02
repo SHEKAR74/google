@@ -72,3 +72,46 @@ resource "azurerm_private_endpoint" "redis_cache_private_endpoint" {
 #   account_tier             = "Standard"
 #   account_replication_type = "GRS"
 # }
+
+variable "redis_cache_settings" {
+  description = "settings for the redis_cache"
+  type = object({
+    rc_name                       = string
+    capacity                      = number
+    family                        = string
+    sku_name                      = string
+    enable_non_ssl_port           = bool
+    public_network_access_enabled = bool
+    private_static_ip_address     = bool
+    redis_subnet_name             = string
+    redis_vnet_name               = string
+    pe_subnet_name                = string
+    pe_vnet_name                  = string
+    vnet_rg_name                  = string
+
+  })
+}
+
+variable "credis_cache_private_dns_zone_ids" {
+  type    = list(string)
+  default = []
+}
+
+redis_cache_settings = {
+  rc_name                       = "redis-cache-genaiplatform-dev-we-001"
+  capacity                      = 3
+  family                        = "p"
+  sku_name                      = "Premium"
+  enable_non_ssl_port           = false
+  public_network_access_enabled = false
+  private_static_ip_address     = true
+  redis_subnet_name             = "sub-d-we1-interaction-44.76.21.64-26"
+  redis_vnet_name               = "vnet-d-we1-aim-genai"
+  pe_subnet_name                = "sub-d-we1-interaction-44.76.19.0-24"
+  pe_vnet_name                  = "vnet-d-we1-aim-genai"
+  vnet_rg_name                  = "rg-d-we1-aim-genai-networking"
+}
+
+
+
+# credis_cache_private_dns_zone_ids = ["/subscriptions/af3995
